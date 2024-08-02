@@ -22,7 +22,7 @@ func NewHandler(storage storage.JobStorage) *Handler {
 // GetJobs godoc
 // @Summary Get jobs
 // @Description Get a list of jobs
-// @Tags jobs
+// @Tags jobScraper
 // @Accept json
 // @Produce json
 // @Success 200 {array} scraper.Job
@@ -41,10 +41,9 @@ func (h *Handler) GetJobs(w http.ResponseWriter, r *http.Request) {
 // StartScraping godoc
 // @Summary Start scraping
 // @Description Start scraping jobs based on the provided configuration
-// @Tags scrape
-// @Accept json
+// @Tags jobScraper
 // @Produce json
-// @Param jobTitle query string true "Job Title"
+// @Param title query string true "Job Title"
 // @Param country query string true "Country"
 // @Param pages query int false "Number of Pages"
 // @Success 202 {string} string "Scraping started"

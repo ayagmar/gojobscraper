@@ -43,16 +43,14 @@ paths:
             type: array
       summary: Get jobs
       tags:
-      - jobs
+      - jobScraper
   /scrape:
     post:
-      consumes:
-      - application/json
       description: Start scraping jobs based on the provided configuration
       parameters:
       - description: Job Title
         in: query
-        name: jobTitle
+        name: title
         required: true
         type: string
       - description: Country
@@ -73,5 +71,5 @@ paths:
             type: string
       summary: Start scraping
       tags:
-      - scrape
+      - jobScraper
 swagger: "2.0"

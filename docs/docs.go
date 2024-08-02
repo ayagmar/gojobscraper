@@ -26,7 +26,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "jobs"
+                    "jobScraper"
                 ],
                 "summary": "Get jobs",
                 "responses": {
@@ -45,21 +45,18 @@ const docTemplate = `{
         "/scrape": {
             "post": {
                 "description": "Start scraping jobs based on the provided configuration",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "scrape"
+                    "jobScraper"
                 ],
                 "summary": "Start scraping",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "Job Title",
-                        "name": "jobTitle",
+                        "name": "title",
                         "in": "query",
                         "required": true
                     },
