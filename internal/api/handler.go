@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -11,60 +12,48 @@ import (
 )
 
 type Handler struct {
-	Storage storage.JobStorage
+	storage storage.JobStorage
 }
 
+func NewHandler(storage storage.JobStorage) *Handler {
+	return &Handler{storage: storage}
+}
+
+// GetJobs godoc
+// @Summary Get jobs
+// @Description Get a list of jobs
+// @Tags jobs
+// @Accept json
+// @Produce json
+// @Success 200 {array} scraper.Job
+// @Router /jobs [get]
 func (h *Handler) GetJobs(w http.ResponseWriter, r *http.Request) {
-	log.Printf("Received request for jobs. Method: %s, URL: %s", r.Method, r.URL)
-
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	jobs, err := h.Storage.GetJobs()
+	jobs, err := h.storage.GetJobs()
 	if err != nil {
 		log.Printf("Error retrieving jobs: %v", err)
 		http.Error(w, "Failed to retrieve jobs", http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(jobs); err != nil {
-		log.Printf("Error encoding jobs to JSON: %v", err)
-		http.Error(w, "Failed to encode jobs", http.StatusInternalServerError)
-		return
-	}
-
-	log.Printf("Successfully returned %d jobs", len(jobs))
+	respondJSON(w, jobs, http.StatusOK)
 }
 
+// StartScraping godoc
+// @Summary Start scraping
+// @Description Start scraping jobs based on the provided configuration
+// @Tags scrape
+// @Accept json
+// @Produce json
+// @Param jobTitle query string true "Job Title"
+// @Param country query string true "Country"
+// @Param pages query int false "Number of Pages"
+// @Success 202 {string} string "Scraping started"
+// @Router /scrape [post]
 func (h *Handler) StartScraping(w http.ResponseWriter, r *http.Request) {
-	log.Printf("Received request to start scraping. Method: %s, URL: %s", r.Method, r.URL)
-
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	config, err := parseScrapingConfig(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
-	}
-
-	jobTitle := r.URL.Query().Get("title")
-	country := r.URL.Query().Get("country")
-	pagesStr := r.URL.Query().Get("pages")
-
-	if jobTitle == "" || country == "" {
-		http.Error(w, "Missing job title or country", http.StatusBadRequest)
-		return
-	}
-
-	pages, err := strconv.Atoi(pagesStr)
-	if err != nil || pages < 1 {
-		pages = 1 // Default to 1 page if not specified or invalid
-	}
-
-	config := scraper.ScrapeConfig{
-		JobTitle: jobTitle,
-		Country:  country,
-		Pages:    pages,
 	}
 
 	go h.scrapeAndSaveJobs(config)
@@ -81,10 +70,39 @@ func (h *Handler) scrapeAndSaveJobs(config scraper.ScrapeConfig) {
 		return
 	}
 
-	if err := h.Storage.SaveJobs(jobs); err != nil {
+	if err := h.storage.SaveJobs(jobs); err != nil {
 		log.Printf("Error saving jobs: %v", err)
 		return
 	}
 
 	log.Printf("Successfully scraped %d jobs", len(jobs))
+}
+
+func parseScrapingConfig(r *http.Request) (scraper.ScrapeConfig, error) {
+	jobTitle := r.URL.Query().Get("title")
+	country := r.URL.Query().Get("country")
+	pagesStr := r.URL.Query().Get("pages")
+
+	if jobTitle == "" || country == "" {
+		return scraper.ScrapeConfig{}, errors.New("missing job title or country")
+	}
+
+	pages, err := strconv.Atoi(pagesStr)
+	if err != nil || pages < 1 {
+		pages = 1 // Default to 1 page if not specified or invalid
+	}
+
+	return scraper.ScrapeConfig{
+		JobTitle: jobTitle,
+		Country:  country,
+		Pages:    pages,
+	}, nil
+}
+
+func respondJSON(w http.ResponseWriter, data interface{}, status int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		log.Printf("Error encoding response to JSON: %v", err)
+	}
 }

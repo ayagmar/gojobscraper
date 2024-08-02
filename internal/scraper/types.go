@@ -4,7 +4,7 @@ import "time"
 
 type Job struct {
 	ID            string    `json:"id"`
-	PlatformJobId string    `json:"platform_job_ids"`
+	PlatformJobId string    `json:"platform_job_id"`
 	Title         string    `json:"title"`
 	Company       string    `json:"company"`
 	Location      string    `json:"location"`

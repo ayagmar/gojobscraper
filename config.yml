@@ -1,0 +1,22 @@
+# Server configuration
+server:
+  address: ":8080"
+  read_timeout: 15s
+  write_timeout: 15s
+  idle_timeout: 60s
+
+# Database configuration
+database:
+  url: "postgres://jobuser:jobpassword@localhost:5432/jobscraper?sslmode=disable"
+  max_open_conns: 25
+  max_idle_conns: 25
+  conn_max_lifetime: 5m
+
+# Scraper configuration
+scraper:
+  default_pages: 1
+
+# Logging configuration
+log:
+  level: "info"
+  format: "json"
