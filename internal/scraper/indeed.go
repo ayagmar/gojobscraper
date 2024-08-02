@@ -47,6 +47,28 @@ func cleanJobURL(dirtyURL string) string {
 	return fmt.Sprintf("https://www.indeed.com/viewjob?jk=%s", jk)
 }
 
+func ExtractJobKey(jobUrl string) string {
+	parsedURL, err := url.Parse(jobUrl)
+	if err != nil {
+		log.Printf("Error parsing URL: %s", err)
+		return ""
+	}
+
+	queryParams, err := url.ParseQuery(parsedURL.RawQuery)
+	if err != nil {
+		log.Printf("Error parsing query parameters: %s", err)
+		return ""
+	}
+
+	jk := queryParams.Get("jk")
+	if jk == "" {
+		log.Printf("No 'jk' parameter found in URL: %s", jobUrl)
+		return ""
+	}
+
+	return jk
+}
+
 func ScrapeIndeed(config ScrapeConfig) ([]Job, error) {
 	log.Printf("Starting Indeed scraper for job title: %s, country: %s, pages: %d", config.JobTitle, config.Country, config.Pages)
 
@@ -100,12 +122,13 @@ func ScrapeIndeed(config ScrapeConfig) ([]Job, error) {
 		dirtyURL := e.Request.AbsoluteURL(e.ChildAttr("h2.jobTitle a", "href"))
 		cleanURL := cleanJobURL(dirtyURL)
 		job := Job{
-			Title:     e.ChildText(".jobTitle span"),
-			Company:   e.ChildText("[data-testid='company-name']"),
-			Location:  e.ChildText("[data-testid='text-location']"),
-			Summary:   e.ChildText(".css-9446fg"),
-			URL:       cleanURL,
-			CreatedAt: time.Now(),
+			PlatformJobId: ExtractJobKey(cleanURL),
+			Title:         e.ChildText(".jobTitle span"),
+			Company:       e.ChildText("[data-testid='company-name']"),
+			Location:      e.ChildText("[data-testid='text-location']"),
+			Summary:       e.ChildText(".css-9446fg"),
+			URL:           cleanURL,
+			CreatedAt:     time.Now(),
 		}
 		jobs = append(jobs, job)
 		log.Printf("Parsed job: %s at %s, URL: %s", job.Title, job.Company, job.URL)

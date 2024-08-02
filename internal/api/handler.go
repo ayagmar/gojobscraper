@@ -79,10 +79,10 @@ func (h *Handler) StartScraping(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if err := h.Storage.ClearJobs(); err != nil {
+		/* 		if err := h.Storage.ClearJobs(); err != nil {
 			log.Printf("Error clearing jobs: %v", err)
 			return
-		}
+		} */
 
 		if err := h.Storage.SaveJobs(jobs); err != nil {
 			log.Printf("Error saving jobs: %v", err)

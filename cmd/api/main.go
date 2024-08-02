@@ -17,7 +17,11 @@ func main() {
 	log.Println("Starting Job Scraper Application")
 
 	// Initialize storage
-	jobStorage := storage.NewMemoryStorage()
+	connStr := "postgres://jobuser:jobpassword@localhost:5432/jobscraper?sslmode=disable"
+	jobStorage, err := storage.NewPostgresStorage(connStr)
+	if err != nil {
+		log.Fatalf("Failed to initialize storage: %v", err)
+	}
 
 	// Initialize API handler
 	handler := &api.Handler{
