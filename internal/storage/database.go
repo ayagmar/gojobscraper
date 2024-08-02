@@ -61,35 +61,47 @@ func (p *PostgresStorage) SaveJobs(jobs []scraper.Job) error {
 	stmt, err := tx.Prepare(`
 		INSERT INTO jobs (id, platform_job_id, title, company, location, summary, url, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-		ON CONFLICT (platform_job_id) DO UPDATE SET
-			title = EXCLUDED.title,
-			company = EXCLUDED.company,
-			location = EXCLUDED.location,
-			summary = EXCLUDED.summary,
-			url = EXCLUDED.url,
-			created_at = EXCLUDED.created_at
+		ON CONFLICT (platform_job_id) DO NOTHING
 	`)
 	if err != nil {
 		return fmt.Errorf("failed to prepare statement: %w", err)
 	}
 	defer stmt.Close()
 
+	conflictStmt, err := tx.Prepare(`
+		SELECT platform_job_id FROM jobs WHERE platform_job_id = $1
+	`)
+	if err != nil {
+		return fmt.Errorf("failed to prepare conflict check statement: %w", err)
+	}
+	defer conflictStmt.Close()
+
 	for _, job := range jobs {
 		if job.ID == "" {
 			job.ID = uuid.New().String()
 		}
+
 		_, err := stmt.Exec(job.ID, job.PlatformJobId, job.Title, job.Company, job.Location, job.Summary, job.URL, job.CreatedAt)
 		if err != nil {
-			return fmt.Errorf("failed to insert/update job: %w", err)
+			return fmt.Errorf("failed to insert job: %w", err)
 		}
-		log.Printf("Saved job: ID=%s, Title=%s", job.ID, job.Title)
+
+		var existingJobId string
+		err = conflictStmt.QueryRow(job.PlatformJobId).Scan(&existingJobId)
+		if err == nil {
+			log.Printf("Job not saved due to conflict: PlatformJobId=%s, Title=%s", job.PlatformJobId, job.Title)
+		} else if err != sql.ErrNoRows {
+			return fmt.Errorf("failed to check for job conflict: %w", err)
+		} else {
+			log.Printf("Saved job: ID=%s, Title=%s", job.ID, job.Title)
+		}
 	}
 
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
-	log.Printf("Saved %d jobs in PostgreSQL storage", len(jobs))
+	log.Printf("Processed %d jobs in PostgreSQL storage", len(jobs))
 	return nil
 }
 

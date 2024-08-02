@@ -18,7 +18,6 @@ func (h *Handler) GetJobs(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Received request for jobs. Method: %s, URL: %s", r.Method, r.URL)
 
 	if r.Method != http.MethodGet {
-		log.Printf("Invalid method: %s", r.Method)
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
@@ -44,7 +43,6 @@ func (h *Handler) StartScraping(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Received request to start scraping. Method: %s, URL: %s", r.Method, r.URL)
 
 	if r.Method != http.MethodPost {
-		log.Printf("Invalid method: %s", r.Method)
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
@@ -54,14 +52,12 @@ func (h *Handler) StartScraping(w http.ResponseWriter, r *http.Request) {
 	pagesStr := r.URL.Query().Get("pages")
 
 	if jobTitle == "" || country == "" {
-		log.Println("Missing job title or country")
 		http.Error(w, "Missing job title or country", http.StatusBadRequest)
 		return
 	}
 
 	pages, err := strconv.Atoi(pagesStr)
 	if err != nil || pages < 1 {
-		log.Println("Invalid number of pages")
 		pages = 1 // Default to 1 page if not specified or invalid
 	}
 
@@ -71,27 +67,24 @@ func (h *Handler) StartScraping(w http.ResponseWriter, r *http.Request) {
 		Pages:    pages,
 	}
 
-	go func() {
-		log.Printf("Starting scraping for job title: %s, country: %s, pages: %d", config.JobTitle, config.Country, config.Pages)
-		jobs, err := scraper.ScrapeIndeed(config)
-		if err != nil {
-			log.Printf("Error scraping Indeed: %v", err)
-			return
-		}
-
-		/* 		if err := h.Storage.ClearJobs(); err != nil {
-			log.Printf("Error clearing jobs: %v", err)
-			return
-		} */
-
-		if err := h.Storage.SaveJobs(jobs); err != nil {
-			log.Printf("Error saving jobs: %v", err)
-			return
-		}
-
-		log.Printf("Successfully scraped and saved %d jobs", len(jobs))
-	}()
+	go h.scrapeAndSaveJobs(config)
 
 	w.WriteHeader(http.StatusAccepted)
 	w.Write([]byte("Scraping started"))
+}
+
+func (h *Handler) scrapeAndSaveJobs(config scraper.ScrapeConfig) {
+	log.Printf("Starting scraping for job title: %s, country: %s, pages: %d", config.JobTitle, config.Country, config.Pages)
+	jobs, err := scraper.ScrapeIndeed(config)
+	if err != nil {
+		log.Printf("Error scraping Indeed: %v", err)
+		return
+	}
+
+	if err := h.Storage.SaveJobs(jobs); err != nil {
+		log.Printf("Error saving jobs: %v", err)
+		return
+	}
+
+	log.Printf("Successfully scraped %d jobs", len(jobs))
 }
