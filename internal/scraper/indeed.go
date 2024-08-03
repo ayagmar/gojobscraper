@@ -5,6 +5,7 @@ import (
 	"log"
 	"math/rand"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/gocolly/colly/v2"
@@ -16,30 +17,69 @@ func (s *IndeedScraper) Scrape(config ScrapeConfig) ([]Job, error) {
 	log.Printf("Starting Indeed scraper for job title: %s, country: %s, pages: %d", config.JobTitle, config.Country, config.Pages)
 
 	c := SetupColly(fmt.Sprintf("%s.indeed.com", config.Country))
-
-	var jobs []Job
-
-	c.OnHTML("body", func(e *colly.HTMLElement) {
-		log.Printf("Found job cards: %d", e.DOM.Find("#mosaic-provider-jobcards .job_seen_beacon").Length())
-	})
+	jobs := make([]Job, 0)
 
 	c.OnHTML("#mosaic-provider-jobcards .job_seen_beacon", func(e *colly.HTMLElement) {
-		dirtyURL := e.Request.AbsoluteURL(e.ChildAttr("h2.jobTitle a", "href"))
-		cleanURL := cleanJobURL(dirtyURL)
-		job := Job{
-			PlatformJobId: ExtractJobKey(cleanURL),
-			Title:         e.ChildText(".jobTitle span"),
-			Company:       e.ChildText("[data-testid='company-name']"),
-			Location:      e.ChildText("[data-testid='text-location']"),
-			Summary:       e.ChildText(".css-9446fg"),
-			URL:           cleanURL,
-			CreatedAt:     time.Now(),
-			Source:        Indeed,
+		job, err := s.parseJobCard(e)
+		if err != nil {
+			log.Printf("Error parsing job card: %v", err)
+			return
 		}
 		jobs = append(jobs, job)
 		log.Printf("Parsed job: %s at %s, URL: %s", job.Title, job.Company, job.URL)
 	})
 
+	err := s.visitPages(c, config)
+	if err != nil {
+		return nil, fmt.Errorf("error visiting pages: %w", err)
+	}
+
+	log.Printf("Scraped total of %d jobs from Indeed", len(jobs))
+	return jobs, nil
+}
+
+func (s *IndeedScraper) parseJobCard(e *colly.HTMLElement) (Job, error) {
+	dirtyURL := e.Request.AbsoluteURL(e.ChildAttr("h2.jobTitle a", "href"))
+	cleanURL := cleanJobURL(dirtyURL)
+
+	job := Job{
+		PlatformJobId: ExtractJobKey(cleanURL),
+		Title:         e.ChildText(".jobTitle span"),
+		Company:       e.ChildText("[data-testid='company-name']"),
+		Location:      e.ChildText("[data-testid='text-location']"),
+		Summary:       e.ChildText(".css-9446fg"),
+		URL:           cleanURL,
+		CreatedAt:     time.Now(),
+		Source:        Indeed,
+	}
+
+	// Fetch full job description
+	description, err := s.fetchJobDescription(job.URL)
+	if err != nil {
+		return Job{}, fmt.Errorf("error fetching job description: %w", err)
+	}
+	job.Description = description
+
+	return job, nil
+}
+
+func (s *IndeedScraper) fetchJobDescription(jobURL string) (string, error) {
+	c := SetupColly("www.indeed.com")
+	var description string
+
+	c.OnHTML("#jobDescriptionText", func(e *colly.HTMLElement) {
+		description = strings.TrimSpace(e.Text)
+	})
+
+	err := c.Visit(jobURL)
+	if err != nil {
+		return "", err
+	}
+
+	return description, nil
+}
+
+func (s *IndeedScraper) visitPages(c *colly.Collector, config ScrapeConfig) error {
 	baseURL := fmt.Sprintf("https://%s.indeed.com/jobs", config.Country)
 	query := url.Values{}
 	query.Set("q", config.JobTitle)
@@ -52,7 +92,7 @@ func (s *IndeedScraper) Scrape(config ScrapeConfig) ([]Job, error) {
 		if err != nil {
 			log.Printf("Error visiting page %d: %v", page, err)
 			if page == 0 {
-				return nil, err // If we can't scrape the first page, return the error
+				return fmt.Errorf("error visiting first page: %w", err)
 			}
 			continue
 		}
@@ -61,8 +101,7 @@ func (s *IndeedScraper) Scrape(config ScrapeConfig) ([]Job, error) {
 		time.Sleep(time.Duration(rand.Intn(5)+5) * time.Second)
 	}
 
-	log.Printf("Scraped total of %d jobs from Indeed", len(jobs))
-	return jobs, nil
+	return nil
 }
 
 func cleanJobURL(dirtyURL string) string {

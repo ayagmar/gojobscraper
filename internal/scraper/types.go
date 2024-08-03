@@ -9,6 +9,7 @@ type Job struct {
 	Company       string      `json:"company"`
 	Location      string      `json:"location"`
 	Summary       string      `json:"summary"`
+	Description   string      `json:"description"`
 	URL           string      `json:"url"`
 	Source        ScraperType `json:"source"`
 	CreatedAt     time.Time   `json:"createdAt"`

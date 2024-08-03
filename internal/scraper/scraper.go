@@ -35,6 +35,7 @@ func SetupColly(allowedDomains ...string) *colly.Collector {
 	c := colly.NewCollector(
 		colly.UserAgent(getRandomUserAgent()),
 		colly.AllowedDomains(allowedDomains...),
+		colly.MaxDepth(2),
 	)
 
 	// Rotate user agents
