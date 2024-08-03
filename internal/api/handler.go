@@ -43,10 +43,12 @@ func (h *Handler) GetJobs(w http.ResponseWriter, r *http.Request) {
 // @Description Start scraping jobs based on the provided configuration
 // @Tags jobScraper
 // @Produce json
-// @Param title query string true "Job Title"
+// @Param jobTitle query string true "Job Title"
 // @Param country query string true "Country"
-// @Param pages query int false "Number of Pages"
+// @Param pages query int false "Number of Pages" default(1)
+// @Param source query string true "Source of job listings (indeed or linkedin)" Enums(indeed, linkedin)
 // @Success 202 {string} string "Scraping started"
+// @Failure 400 {string} string "Bad Request"
 // @Router /scrape [post]
 func (h *Handler) StartScraping(w http.ResponseWriter, r *http.Request) {
 	config, err := parseScrapingConfig(r)
@@ -62,10 +64,18 @@ func (h *Handler) StartScraping(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) scrapeAndSaveJobs(config scraper.ScrapeConfig) {
-	log.Printf("Starting scraping for job title: %s, country: %s, pages: %d", config.JobTitle, config.Country, config.Pages)
-	jobs, err := scraper.ScrapeIndeed(config)
+	log.Printf("Starting scraping for job title: %s, country: %s, pages: %d, source: %s",
+		config.JobTitle, config.Country, config.Pages, config.Source)
+
+	scraper, err := scraper.NewScraper(config.Source)
 	if err != nil {
-		log.Printf("Error scraping Indeed: %v", err)
+		log.Printf("Error creating scraper: %v", err)
+		return
+	}
+
+	jobs, err := scraper.Scrape(config)
+	if err != nil {
+		log.Printf("Error scraping %s: %v", config.Source, err)
 		return
 	}
 
@@ -74,16 +84,17 @@ func (h *Handler) scrapeAndSaveJobs(config scraper.ScrapeConfig) {
 		return
 	}
 
-	log.Printf("Successfully scraped %d jobs", len(jobs))
+	log.Printf("Successfully scraped %d jobs from %s", len(jobs), config.Source)
 }
 
 func parseScrapingConfig(r *http.Request) (scraper.ScrapeConfig, error) {
-	jobTitle := r.URL.Query().Get("title")
+	jobTitle := r.URL.Query().Get("jobTitle")
 	country := r.URL.Query().Get("country")
 	pagesStr := r.URL.Query().Get("pages")
+	source := r.URL.Query().Get("source")
 
-	if jobTitle == "" || country == "" {
-		return scraper.ScrapeConfig{}, errors.New("missing job title or country")
+	if jobTitle == "" || country == "" || source == "" {
+		return scraper.ScrapeConfig{}, errors.New("missing job title, country, or source")
 	}
 
 	pages, err := strconv.Atoi(pagesStr)
@@ -91,10 +102,16 @@ func parseScrapingConfig(r *http.Request) (scraper.ScrapeConfig, error) {
 		pages = 1 // Default to 1 page if not specified or invalid
 	}
 
+	scraperType := scraper.ScraperType(source)
+	if scraperType != scraper.Indeed && scraperType != scraper.LinkedIn {
+		return scraper.ScrapeConfig{}, errors.New("invalid source. Must be 'indeed' or 'linkedin'")
+	}
+
 	return scraper.ScrapeConfig{
 		JobTitle: jobTitle,
 		Country:  country,
 		Pages:    pages,
+		Source:   scraperType,
 	}, nil
 }
 
