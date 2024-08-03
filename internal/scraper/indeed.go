@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/gocolly/colly/v2"
@@ -105,7 +104,7 @@ func (s *IndeedScraper) Scrape(config ScrapeConfig) ([]Job, error) {
 
 	baseURL := fmt.Sprintf("https://%s.indeed.com/jobs", config.Country)
 	query := url.Values{}
-	query.Set("q", strings.ReplaceAll(config.JobTitle, " ", "+"))
+	query.Set("q", config.JobTitle)
 
 	for page := 0; page < config.Pages; page++ {
 		query.Set("start", fmt.Sprintf("%d", page*10))
