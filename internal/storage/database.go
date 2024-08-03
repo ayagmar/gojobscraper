@@ -74,12 +74,21 @@ func (p *PostgresStorage) SaveJobs(jobs []scraper.Job) error {
 			job.ID = uuid.New().String()
 		}
 
-		_, err := stmt.Exec(job.ID, job.PlatformJobId, job.Title, job.Company, job.Location, job.Summary, job.URL, job.Source, job.CreatedAt)
+		result, err := stmt.Exec(job.ID, job.PlatformJobId, job.Title, job.Company, job.Location, job.Summary, job.URL, job.Source, job.CreatedAt)
 		if err != nil {
 			return fmt.Errorf("failed to insert job: %w", err)
 		}
 
-		log.Printf("Processed job: ID=%s, Title=%s", job.ID, job.Title)
+		rowsAffected, err := result.RowsAffected()
+		if err != nil {
+			return fmt.Errorf("failed to get rows affected: %w", err)
+		}
+
+		if rowsAffected == 0 {
+			log.Printf("Job not saved due to conflict: PlatformJobId=%s, Title=%s", job.PlatformJobId, job.Title)
+		} else {
+			log.Printf("Saved job: ID=%s, Title=%s", job.ID, job.Title)
+		}
 	}
 
 	if err := tx.Commit(); err != nil {
