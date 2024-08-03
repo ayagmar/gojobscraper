@@ -12,6 +12,8 @@ definitions:
         type: string
       platform_job_id:
         type: string
+      source:
+        $ref: '#/definitions/scraper.ScraperType'
       summary:
         type: string
       title:
@@ -19,6 +21,14 @@ definitions:
       url:
         type: string
     type: object
+  scraper.ScraperType:
+    enum:
+    - indeed
+    - linkedin
+    type: string
+    x-enum-varnames:
+    - Indeed
+    - LinkedIn
 host: localhost:8080
 info:
   contact: {}
@@ -50,7 +60,7 @@ paths:
       parameters:
       - description: Job Title
         in: query
-        name: title
+        name: jobTitle
         required: true
         type: string
       - description: Country
@@ -58,15 +68,28 @@ paths:
         name: country
         required: true
         type: string
-      - description: Number of Pages
+      - default: 1
+        description: Number of Pages
         in: query
         name: pages
         type: integer
+      - description: Source of job listings (indeed or linkedin)
+        enum:
+        - indeed
+        - linkedin
+        in: query
+        name: source
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "202":
           description: Scraping started
+          schema:
+            type: string
+        "400":
+          description: Bad Request
           schema:
             type: string
       summary: Start scraping

@@ -56,7 +56,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Job Title",
-                        "name": "title",
+                        "name": "jobTitle",
                         "in": "query",
                         "required": true
                     },
@@ -69,14 +69,32 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
+                        "default": 1,
                         "description": "Number of Pages",
                         "name": "pages",
                         "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "indeed",
+                            "linkedin"
+                        ],
+                        "type": "string",
+                        "description": "Source of job listings (indeed or linkedin)",
+                        "name": "source",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "202": {
                         "description": "Scraping started",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "type": "string"
                         }
@@ -104,6 +122,9 @@ const docTemplate = `{
                 "platform_job_id": {
                     "type": "string"
                 },
+                "source": {
+                    "$ref": "#/definitions/scraper.ScraperType"
+                },
                 "summary": {
                     "type": "string"
                 },
@@ -114,6 +135,17 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "scraper.ScraperType": {
+            "type": "string",
+            "enum": [
+                "indeed",
+                "linkedin"
+            ],
+            "x-enum-varnames": [
+                "Indeed",
+                "LinkedIn"
+            ]
         }
     }
 }`

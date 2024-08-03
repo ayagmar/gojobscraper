@@ -44,6 +44,7 @@ func (p *PostgresStorage) createJobsTable() error {
 			location TEXT NOT NULL,
 			summary TEXT,
 			url TEXT NOT NULL,
+			source TEXT NOT NULL,
 			created_at TIMESTAMP NOT NULL
 		)
 	`
@@ -59,9 +60,9 @@ func (p *PostgresStorage) SaveJobs(jobs []scraper.Job) error {
 	defer tx.Rollback()
 
 	stmt, err := tx.Prepare(`
-		INSERT INTO jobs (id, platform_job_id, title, company, location, summary, url, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-		ON CONFLICT (platform_job_id) DO NOTHING
+	INSERT INTO jobs (id, platform_job_id, title, company, location, summary, url, source, created_at)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	ON CONFLICT (platform_job_id) DO NOTHING
 	`)
 	if err != nil {
 		return fmt.Errorf("failed to prepare statement: %w", err)
@@ -81,7 +82,7 @@ func (p *PostgresStorage) SaveJobs(jobs []scraper.Job) error {
 			job.ID = uuid.New().String()
 		}
 
-		_, err := stmt.Exec(job.ID, job.PlatformJobId, job.Title, job.Company, job.Location, job.Summary, job.URL, job.CreatedAt)
+		_, err := stmt.Exec(job.ID, job.PlatformJobId, job.Title, job.Company, job.Location, job.Summary, job.URL, job.Source, job.CreatedAt)
 		if err != nil {
 			return fmt.Errorf("failed to insert job: %w", err)
 		}
@@ -107,7 +108,7 @@ func (p *PostgresStorage) SaveJobs(jobs []scraper.Job) error {
 
 func (p *PostgresStorage) GetJobs() ([]scraper.Job, error) {
 	query := `
-		SELECT id, platform_job_id, title, company, location, summary, url, created_at
+		SELECT id, platform_job_id, title, company, location, summary, url, source, created_at
 		FROM jobs
 		ORDER BY created_at DESC
 	`
@@ -120,7 +121,7 @@ func (p *PostgresStorage) GetJobs() ([]scraper.Job, error) {
 	var jobs []scraper.Job
 	for rows.Next() {
 		var job scraper.Job
-		err := rows.Scan(&job.ID, &job.PlatformJobId, &job.Title, &job.Company, &job.Location, &job.Summary, &job.URL, &job.CreatedAt)
+		err := rows.Scan(&job.ID, &job.PlatformJobId, &job.Title, &job.Company, &job.Location, &job.Summary, &job.URL, &job.Source, &job.CreatedAt)
 		if err != nil {
 			log.Printf("Error scanning job row: %v", err)
 			continue
