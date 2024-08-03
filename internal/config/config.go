@@ -1,21 +1,23 @@
 package config
 
 import (
+	"time"
+
 	"github.com/spf13/viper"
 )
 
 type Config struct {
 	Server struct {
-		Address      string `mapstructure:"address"`
-		ReadTimeout  string `mapstructure:"read_timeout"`
-		WriteTimeout string `mapstructure:"write_timeout"`
-		IdleTimeout  string `mapstructure:"idle_timeout"`
+		Address      string        `mapstructure:"address"`
+		ReadTimeout  time.Duration `mapstructure:"read_timeout"`
+		WriteTimeout time.Duration `mapstructure:"write_timeout"`
+		IdleTimeout  time.Duration `mapstructure:"idle_timeout"`
 	} `mapstructure:"server"`
 	Database struct {
-		URL             string `mapstructure:"url"`
-		MaxOpenConns    int    `mapstructure:"max_open_conns"`
-		MaxIdleConns    int    `mapstructure:"max_idle_conns"`
-		ConnMaxLifetime string `mapstructure:"conn_max_lifetime"`
+		URL             string        `mapstructure:"url"`
+		MaxOpenConns    int           `mapstructure:"max_open_conns"`
+		MaxIdleConns    int           `mapstructure:"max_idle_conns"`
+		ConnMaxLifetime time.Duration `mapstructure:"conn_max_lifetime"`
 	} `mapstructure:"database"`
 	Scraper struct {
 		DefaultPages int `mapstructure:"default_pages"`

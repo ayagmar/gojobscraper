@@ -53,9 +53,9 @@ func run() error {
 	srv := &http.Server{
 		Addr:         cfg.Server.Address,
 		Handler:      router,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
+		ReadTimeout:  cfg.Server.ReadTimeout,
+		WriteTimeout: cfg.Server.WriteTimeout,
+		IdleTimeout:  cfg.Server.IdleTimeout,
 	}
 
 	go startServer(srv, logger)
@@ -91,7 +91,7 @@ func setupRouter(jobStorage storage.JobStorage, logger *log.Logger) *chi.Mux {
 func startServer(srv *http.Server, logger *log.Logger) {
 	logger.Printf("Starting HTTP server on %s", srv.Addr)
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		logger.Printf("Error starting server: %v", err)
+		logger.Fatalf("Error starting server: %v", err)
 	}
 }
 
@@ -106,7 +106,7 @@ func waitForShutdown(srv *http.Server, logger *log.Logger) {
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		logger.Printf("Error during server shutdown: %v", err)
+		logger.Fatalf("Error during server shutdown: %v", err)
 	}
 
 	logger.Println("Application stopped")
