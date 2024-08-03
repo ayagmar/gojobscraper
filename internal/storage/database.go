@@ -69,14 +69,6 @@ func (p *PostgresStorage) SaveJobs(jobs []scraper.Job) error {
 	}
 	defer stmt.Close()
 
-	conflictStmt, err := tx.Prepare(`
-		SELECT platform_job_id FROM jobs WHERE platform_job_id = $1
-	`)
-	if err != nil {
-		return fmt.Errorf("failed to prepare conflict check statement: %w", err)
-	}
-	defer conflictStmt.Close()
-
 	for _, job := range jobs {
 		if job.ID == "" {
 			job.ID = uuid.New().String()
@@ -87,15 +79,7 @@ func (p *PostgresStorage) SaveJobs(jobs []scraper.Job) error {
 			return fmt.Errorf("failed to insert job: %w", err)
 		}
 
-		var existingJobId string
-		err = conflictStmt.QueryRow(job.PlatformJobId).Scan(&existingJobId)
-		if err == nil {
-			log.Printf("Job not saved due to conflict: PlatformJobId=%s, Title=%s", job.PlatformJobId, job.Title)
-		} else if err != sql.ErrNoRows {
-			return fmt.Errorf("failed to check for job conflict: %w", err)
-		} else {
-			log.Printf("Saved job: ID=%s, Title=%s", job.ID, job.Title)
-		}
+		log.Printf("Processed job: ID=%s, Title=%s", job.ID, job.Title)
 	}
 
 	if err := tx.Commit(); err != nil {

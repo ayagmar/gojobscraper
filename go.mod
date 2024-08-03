@@ -12,6 +12,8 @@ require (
 	github.com/swaggo/swag v1.16.3
 )
 
+require github.com/corpix/uarand v0.2.0 // indirect
+
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/PuerkitoBio/goquery v1.9.2 // indirect
