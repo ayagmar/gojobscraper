@@ -59,33 +59,39 @@ func (s *IndeedScraper) parseJobCard(e *colly.HTMLElement) (JobPosting, error) {
 		Source:        Indeed,
 	}
 
-	description, err := s.fetchJobDescription(job.URL)
+	description, companyURL, err := s.fetchJobDetails(job.URL)
 	if err != nil {
 		return JobPosting{}, fmt.Errorf("error fetching job description: %w", err)
 	}
 	job.Description = description
+	job.PlatformCompanyURL = companyURL
 
 	return job, nil
 }
 
-func (s *IndeedScraper) fetchJobDescription(jobURL string) (string, error) {
+func (s *IndeedScraper) fetchJobDetails(jobURL string) (string, string, error) {
 	c := SetupColly("www.indeed.com")
 	if c == nil {
-		return "", fmt.Errorf("failed to setup collector for job description")
+		return "", "", fmt.Errorf("failed to setup collector for job description")
 	}
 
 	var description string
+	var companyURL string
 
 	c.OnHTML("#jobDescriptionText", func(e *colly.HTMLElement) {
 		description = strings.TrimSpace(e.Text)
 	})
+	c.OnHTML("div[data-company-name='true']", func(e *colly.HTMLElement) {
+		dirtyCompanyURL := e.ChildAttr("a", "href")
+		companyURL = cleanCompanyURL(dirtyCompanyURL)
+	})
 
 	err := c.Visit(jobURL)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	return description, nil
+	return description, companyURL, nil
 }
 
 func (s *IndeedScraper) visitPages(c *colly.Collector, config ScrapeConfig) error {
@@ -155,4 +161,18 @@ func ExtractJobKey(jobUrl string) string {
 	}
 
 	return jk
+}
+
+func cleanCompanyURL(dirtyURL string) string {
+	parsedURL, err := url.Parse(dirtyURL)
+	if err != nil {
+		log.Printf("Error parsing company URL: %s", err)
+		return dirtyURL
+	}
+
+	// Keep only the scheme and path
+	cleanedURL := fmt.Sprintf("%s://%s%s", parsedURL.Scheme, parsedURL.Host, parsedURL.Path)
+
+	// Remove trailing slash if present
+	return strings.TrimSuffix(cleanedURL, "/")
 }
