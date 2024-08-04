@@ -7,10 +7,10 @@ server:
 
 # Database configuration
 database:
-  url: "postgres://jobuser:jobpassword@localhost:5432/jobscraper?sslmode=disable"
-  max_open_conns: 25
-  max_idle_conns: 25
-  conn_max_lifetime: "5m"
+  url: "mongodb://jobuser:jobpassword@localhost:27017"
+  name: "jobscraper"
+  max_pool_size: 100
+  min_pool_size: 5
 
 # Scraper configuration
 scraper:

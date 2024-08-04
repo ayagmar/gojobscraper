@@ -13,7 +13,7 @@ import (
 )
 
 type Scraper interface {
-	Scrape(config ScrapeConfig) ([]Job, error)
+	Scrape(config ScrapeConfig) ([]JobPosting, error)
 }
 
 func NewScraper(scraperType ScraperType) (Scraper, error) {
@@ -38,10 +38,8 @@ func SetupColly(allowedDomains ...string) *colly.Collector {
 		colly.MaxDepth(2),
 	)
 
-	// Rotate user agents
 	extensions.RandomUserAgent(c)
 
-	// Set custom headers
 	c.OnRequest(func(r *colly.Request) {
 		r.Headers.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
 		r.Headers.Set("Accept-Language", "en-US,en;q=0.5")
@@ -70,9 +68,15 @@ func SetupColly(allowedDomains ...string) *colly.Collector {
 
 	c.SetRequestTimeout(60 * time.Second)
 
-	c.Limit(&colly.LimitRule{
+	err := c.Limit(&colly.LimitRule{
+		DomainGlob:  "*",
 		RandomDelay: 5 * time.Second,
+		Parallelism: 2,
 	})
+	if err != nil {
+		log.Printf("Error setting limit rule: %v", err)
+		// Continue even if there's an error setting the limit rule
+	}
 
 	c.OnRequest(func(r *colly.Request) {
 		log.Printf("Scraping: %s", r.URL)

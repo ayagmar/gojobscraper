@@ -1,8 +1,10 @@
 package scraper
 
-import "time"
+import (
+	"time"
+)
 
-type Job struct {
+type JobPosting struct {
 	ID            string      `json:"id"`
 	PlatformJobId string      `json:"platform_job_id"`
 	Title         string      `json:"title"`
