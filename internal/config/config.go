@@ -14,10 +14,10 @@ type Config struct {
 		IdleTimeout  time.Duration `mapstructure:"idle_timeout"`
 	} `mapstructure:"server"`
 	Database struct {
-		URL             string        `mapstructure:"url"`
-		MaxOpenConns    int           `mapstructure:"max_open_conns"`
-		MaxIdleConns    int           `mapstructure:"max_idle_conns"`
-		ConnMaxLifetime time.Duration `mapstructure:"conn_max_lifetime"`
+		URL         string `mapstructure:"url"`
+		Name        string `mapstructure:"name"`
+		MaxPoolSize int    `mapstructure:"max_pool_size"`
+		MinPoolSize int    `mapstructure:"min_pool_size"`
 	} `mapstructure:"database"`
 	Scraper struct {
 		DefaultPages int `mapstructure:"default_pages"`

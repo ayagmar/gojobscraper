@@ -40,11 +40,16 @@ func run() error {
 		return fmt.Errorf("failed to load configuration: %w", err)
 	}
 
-	jobStorage, err := storage.NewPostgresStorage(cfg.Database.URL)
+	jobStorage, err := storage.NewMongoDBStorage(cfg.Database.URL, cfg.Database.Name)
 	if err != nil {
 		return fmt.Errorf("failed to initialize storage: %w", err)
 	}
-	defer jobStorage.Close()
+	defer func(jobStorage *storage.MongoDBStorage) {
+		err := jobStorage.Close()
+		if err != nil {
+			log.Fatalf("Error closing db storage: %v", err)
+		}
+	}(jobStorage)
 
 	logger := log.New(os.Stdout, "JobScraper: ", log.LstdFlags|log.Lshortfile)
 

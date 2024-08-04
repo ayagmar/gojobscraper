@@ -53,7 +53,7 @@ func (p *PostgresStorage) createJobsTable() error {
 	return err
 }
 
-func (p *PostgresStorage) SaveJobs(jobs []scraper.Job) error {
+func (p *PostgresStorage) SaveJobs(jobs []scraper.JobPosting) error {
 	tx, err := p.db.Begin()
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
@@ -86,7 +86,7 @@ func (p *PostgresStorage) SaveJobs(jobs []scraper.Job) error {
 		}
 
 		if rowsAffected == 0 {
-			log.Printf("Job not saved due to conflict: PlatformJobId=%s, Title=%s", job.PlatformJobId, job.Title)
+			log.Printf("JobPosting not saved due to conflict: PlatformJobId=%s, Title=%s", job.PlatformJobId, job.Title)
 		} else {
 			log.Printf("Saved job: ID=%s, Title=%s", job.ID, job.Title)
 		}
@@ -100,7 +100,7 @@ func (p *PostgresStorage) SaveJobs(jobs []scraper.Job) error {
 	return nil
 }
 
-func (p *PostgresStorage) GetJobs() ([]scraper.Job, error) {
+func (p *PostgresStorage) GetJobs() ([]scraper.JobPosting, error) {
 	query := `
 		SELECT id, platform_job_id, title, company, location, summary, description, url, source, created_at
 		FROM jobs
@@ -112,9 +112,9 @@ func (p *PostgresStorage) GetJobs() ([]scraper.Job, error) {
 	}
 	defer rows.Close()
 
-	var jobs []scraper.Job
+	var jobs []scraper.JobPosting
 	for rows.Next() {
-		var job scraper.Job
+		var job scraper.JobPosting
 		err := rows.Scan(&job.ID, &job.PlatformJobId, &job.Title, &job.Company, &job.Location, &job.Summary, &job.Description, &job.URL, &job.Source, &job.CreatedAt)
 		if err != nil {
 			log.Printf("Error scanning job row: %v", err)

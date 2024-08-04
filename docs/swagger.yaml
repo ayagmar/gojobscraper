@@ -12,7 +12,7 @@ definitions:
       message:
         type: string
     type: object
-  scraper.Job:
+  scraper.JobPosting:
     properties:
       company:
         type: string
@@ -63,7 +63,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/scraper.Job'
+              $ref: '#/definitions/scraper.JobPosting'
             type: array
         "500":
           description: Internal Server Error
@@ -78,7 +78,7 @@ paths:
       - application/json
       description: Start scraping jobs based on the provided configuration
       parameters:
-      - description: Job Title
+      - description: JobPosting Title
         in: query
         name: jobTitle
         required: true

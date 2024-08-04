@@ -5,7 +5,8 @@ import (
 )
 
 type JobStorage interface {
-	SaveJobs(jobs []scraper.Job) error
-	GetJobs() ([]scraper.Job, error)
+	SaveJobs(jobs []scraper.JobPosting) error
+	GetJobs() ([]scraper.JobPosting, error)
 	ClearJobs() error
+	Close() error
 }

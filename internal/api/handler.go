@@ -28,14 +28,17 @@ func NewHandler(storage storage.JobStorage, logger *log.Logger) *Handler {
 // @Tags jobScraper
 // @Accept json
 // @Produce json
-// @Success 200 {array} scraper.Job
+// @Success 200 {array} scraper.JobPosting
 // @Failure 500 {object} ErrorResponse
 // @Router /jobs [get]
 func (h *Handler) GetJobs(w http.ResponseWriter, r *http.Request) {
 	jobs, err := h.storage.GetJobs()
 	if err != nil {
 		h.logger.Printf("Error retrieving jobs: %v", err)
-		render.Render(w, r, ErrInternalServer(err))
+		err := render.Render(w, r, ErrInternalServer(err))
+		if err != nil {
+			return
+		}
 		return
 	}
 
@@ -48,7 +51,7 @@ func (h *Handler) GetJobs(w http.ResponseWriter, r *http.Request) {
 // @Tags jobScraper
 // @Accept json
 // @Produce json
-// @Param jobTitle query string true "Job Title"
+// @Param jobTitle query string true "JobPosting Title"
 // @Param country query string true "Country"
 // @Param pages query int false "Number of Pages" default(1)
 // @Param source query string true "Source of job listings (indeed or linkedin)" Enums(indeed, linkedin)
@@ -59,7 +62,10 @@ func (h *Handler) GetJobs(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) StartScraping(w http.ResponseWriter, r *http.Request) {
 	config, err := h.parseScrapingConfig(r)
 	if err != nil {
-		render.Render(w, r, ErrInvalidRequest(err))
+		err := render.Render(w, r, ErrInvalidRequest(err))
+		if err != nil {
+			return
+		}
 		return
 	}
 

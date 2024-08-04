@@ -35,7 +35,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/scraper.Job"
+                                "$ref": "#/definitions/scraper.JobPosting"
                             }
                         }
                     },
@@ -64,7 +64,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Job Title",
+                        "description": "JobPosting Title",
                         "name": "jobTitle",
                         "in": "query",
                         "required": true
@@ -138,7 +138,7 @@ const docTemplate = `{
                 }
             }
         },
-        "scraper.Job": {
+        "scraper.JobPosting": {
             "type": "object",
             "properties": {
                 "company": {

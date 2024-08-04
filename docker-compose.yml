@@ -1,17 +1,26 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:13
-    container_name: job_scraper_db
+  mongodb:
+    image: mongo:5.0
+    container_name: jobscraper_mongodb
     environment:
-      POSTGRES_DB: jobscraper
-      POSTGRES_USER: jobuser
-      POSTGRES_PASSWORD: jobpassword
-    ports:
-      - "5432:5432"
+      - MONGO_INITDB_ROOT_USERNAME=jobuser
+      - MONGO_INITDB_ROOT_PASSWORD=jobpassword
+      - MONGO_INITDB_DATABASE=jobscraper
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - mongodb_data:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - jobscraper_network
+    restart: unless-stopped
 
 volumes:
-  postgres_data:
+  mongodb_data:
+    name: jobscraper_mongodb_data
+
+networks:
+  jobscraper_network:
+    name: jobscraper_network
+    driver: bridge
