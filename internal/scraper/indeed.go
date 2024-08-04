@@ -2,6 +2,7 @@ package scraper
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"log"
 	"math/rand"
 	"net/url"
@@ -47,6 +48,7 @@ func (s *IndeedScraper) parseJobCard(e *colly.HTMLElement) (JobPosting, error) {
 	cleanURL := cleanJobURL(dirtyURL)
 
 	job := JobPosting{
+		ID:            uuid.New().String(),
 		PlatformJobId: ExtractJobKey(cleanURL),
 		Title:         e.ChildText(".jobTitle span"),
 		Company:       e.ChildText("[data-testid='company-name']"),

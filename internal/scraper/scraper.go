@@ -68,16 +68,6 @@ func SetupColly(allowedDomains ...string) *colly.Collector {
 
 	c.SetRequestTimeout(60 * time.Second)
 
-	err := c.Limit(&colly.LimitRule{
-		DomainGlob:  "*",
-		RandomDelay: 5 * time.Second,
-		Parallelism: 2,
-	})
-	if err != nil {
-		log.Printf("Error setting limit rule: %v", err)
-		// Continue even if there's an error setting the limit rule
-	}
-
 	c.OnRequest(func(r *colly.Request) {
 		log.Printf("Scraping: %s", r.URL)
 	})
