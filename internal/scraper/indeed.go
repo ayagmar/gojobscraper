@@ -59,41 +59,47 @@ func (s *IndeedScraper) parseJobCard(e *colly.HTMLElement) (JobPosting, error) {
 		Source:        Indeed,
 	}
 
-	description, companyURL, err := s.fetchJobDetails(job.URL)
+	description, companyDetails, err := s.fetchJobDetails(job.URL)
 	if err != nil {
 		return JobPosting{}, fmt.Errorf("error fetching job description: %w", err)
 	}
+
 	job.Description = description
-	job.PlatformCompanyURL = companyURL
+	job.CompanyDetails = companyDetails
 
 	return job, nil
 }
 
-func (s *IndeedScraper) fetchJobDetails(jobURL string) (string, string, error) {
+func (s *IndeedScraper) fetchJobDetails(jobURL string) (string, CompanyDetails, error) {
 	c := SetupColly("www.indeed.com")
 	if c == nil {
-		return "", "", fmt.Errorf("failed to setup collector for job description")
+		return "", CompanyDetails{}, fmt.Errorf("failed to setup collector for job description")
 	}
 
 	var description string
-	var companyURL string
+	var companyDetails CompanyDetails
 
 	c.OnHTML("#jobDescriptionText", func(e *colly.HTMLElement) {
 		description = strings.TrimSpace(e.Text)
 	})
+
 	c.OnHTML("div[data-company-name='true']", func(e *colly.HTMLElement) {
 		dirtyCompanyURL := e.ChildAttr("a", "href")
-		companyURL = cleanCompanyURL(dirtyCompanyURL)
+		companyDetails.PlatformCompanyURL = cleanCompanyURL(dirtyCompanyURL)
 	})
 
 	err := c.Visit(jobURL)
 	if err != nil {
-		return "", "", err
+		return "", CompanyDetails{}, err
 	}
 
-	return description, companyURL, nil
-}
+	err = s.fetchCompanyDetails(&companyDetails)
+	if err != nil {
+		log.Printf("Error fetching company details: %v", err)
+	}
 
+	return description, companyDetails, nil
+}
 func (s *IndeedScraper) visitPages(c *colly.Collector, config ScrapeConfig) error {
 	baseURL := fmt.Sprintf("https://%s.indeed.com/jobs", config.Country)
 	query := url.Values{}
@@ -114,6 +120,28 @@ func (s *IndeedScraper) visitPages(c *colly.Collector, config ScrapeConfig) erro
 
 		// Add a longer delay between pages
 		time.Sleep(time.Duration(rand.Intn(5)+5) * time.Second)
+	}
+
+	return nil
+}
+
+func (s *IndeedScraper) fetchCompanyDetails(details *CompanyDetails) error {
+	c := SetupColly("www.indeed.com")
+	if c == nil {
+		return fmt.Errorf("failed to setup collector for company details")
+	}
+
+	c.OnHTML("li[data-testid='companyInfo-industry']", func(e *colly.HTMLElement) {
+		details.CompanyIndustry = e.ChildText("div.css-kaq73 a")
+	})
+
+	c.OnHTML("li[data-testid='companyInfo-companyWebsite']", func(e *colly.HTMLElement) {
+		details.CompanyURL = e.ChildAttr("div.css-kaq73 a", "href")
+	})
+
+	err := c.Visit(details.PlatformCompanyURL)
+	if err != nil {
+		return fmt.Errorf("error visiting company page: %w", err)
 	}
 
 	return nil
