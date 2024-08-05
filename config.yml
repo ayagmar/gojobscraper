@@ -1,13 +1,13 @@
 # Server configuration
 server:
-  address: ":8080"
+  address: ":8000"
   read_timeout: "15s"
   write_timeout: "15s"
   idle_timeout: "60s"
 
 # Database configuration
 database:
-  url: "mongodb://jobuser:jobpassword@localhost:27017"
+  url: "mongodb://jobuser:jobpassword@mongodb:27017"
   name: "jobscraper"
   max_pool_size: 100
   min_pool_size: 5

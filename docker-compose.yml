@@ -10,10 +10,23 @@ services:
       - MONGO_INITDB_DATABASE=jobscraper
     volumes:
       - mongodb_data:/data/db
-    ports:
-      - "27017:27017"
     networks:
       - jobscraper_network
+    restart: unless-stopped
+    logging:
+      driver: "none"
+
+  jobscraper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jobscraper_app
+    depends_on:
+      - mongodb
+    networks:
+      - jobscraper_network
+    ports:
+      - "8000:8000"
     restart: unless-stopped
 
 volumes:

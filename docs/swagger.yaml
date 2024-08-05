@@ -12,10 +12,23 @@ definitions:
       message:
         type: string
     type: object
-  scraper.JobPosting:
+  scraper.CompanyDetails:
+    description: Company details
     properties:
-      company:
+      industry:
         type: string
+      name:
+        type: string
+      platform_company_url:
+        type: string
+      url:
+        type: string
+    type: object
+  scraper.JobPosting:
+    description: Job posting details
+    properties:
+      company_details:
+        $ref: '#/definitions/scraper.CompanyDetails'
       createdAt:
         type: string
       description:
@@ -36,6 +49,7 @@ definitions:
         type: string
     type: object
   scraper.ScraperType:
+    description: Type of job scraper
     enum:
     - indeed
     - linkedin
@@ -43,7 +57,6 @@ definitions:
     x-enum-varnames:
     - Indeed
     - LinkedIn
-host: localhost:8080
 info:
   contact: {}
   description: This is a job scraper application.

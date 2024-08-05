@@ -31,7 +31,7 @@ func (s *IndeedScraper) Scrape(config ScrapeConfig) ([]JobPosting, error) {
 			return
 		}
 		jobs = append(jobs, job)
-		log.Printf("Parsed job: %s at %s, URL: %s", job.Title, job.Company, job.URL)
+		log.Printf("Parsed job: %s at %s, URL: %s", job.Title, job.CompanyDetails.Company, job.URL)
 	})
 
 	err := s.visitPages(c, config)
@@ -46,12 +46,12 @@ func (s *IndeedScraper) Scrape(config ScrapeConfig) ([]JobPosting, error) {
 func (s *IndeedScraper) parseJobCard(e *colly.HTMLElement) (JobPosting, error) {
 	dirtyURL := e.Request.AbsoluteURL(e.ChildAttr("h2.jobTitle a", "href"))
 	cleanURL := cleanJobURL(dirtyURL)
+	companyName := e.ChildText("[data-testid='company-name']")
 
 	job := JobPosting{
 		ID:            uuid.New().String(),
 		PlatformJobId: ExtractJobKey(cleanURL),
 		Title:         e.ChildText(".jobTitle span"),
-		Company:       e.ChildText("[data-testid='company-name']"),
 		Location:      e.ChildText("[data-testid='text-location']"),
 		Summary:       e.ChildText(".css-9446fg"),
 		URL:           cleanURL,
@@ -66,6 +66,7 @@ func (s *IndeedScraper) parseJobCard(e *colly.HTMLElement) (JobPosting, error) {
 
 	job.Description = description
 	job.CompanyDetails = companyDetails
+	job.CompanyDetails.Company = companyName
 
 	return job, nil
 }

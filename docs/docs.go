@@ -138,11 +138,30 @@ const docTemplate = `{
                 }
             }
         },
-        "scraper.JobPosting": {
+        "scraper.CompanyDetails": {
+            "description": "Company details",
             "type": "object",
             "properties": {
-                "company": {
+                "industry": {
                     "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "platform_company_url": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "scraper.JobPosting": {
+            "description": "Job posting details",
+            "type": "object",
+            "properties": {
+                "company_details": {
+                    "$ref": "#/definitions/scraper.CompanyDetails"
                 },
                 "createdAt": {
                     "type": "string"
@@ -174,6 +193,7 @@ const docTemplate = `{
             }
         },
         "scraper.ScraperType": {
+            "description": "Type of job scraper",
             "type": "string",
             "enum": [
                 "indeed",
@@ -190,7 +210,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:8080",
+	Host:             "",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
 	Title:            "Job Scraper API",

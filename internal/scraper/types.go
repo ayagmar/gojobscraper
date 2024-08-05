@@ -4,11 +4,12 @@ import (
 	"time"
 )
 
+// JobPosting represents a job posting
+// @Description Job posting details
 type JobPosting struct {
 	ID             string         `json:"id"`
 	PlatformJobId  string         `json:"platform_job_id"`
 	Title          string         `json:"title"`
-	Company        string         `json:"company"`
 	Location       string         `json:"location"`
 	Summary        string         `json:"summary"`
 	Description    string         `json:"description"`
@@ -17,12 +18,18 @@ type JobPosting struct {
 	Source         ScraperType    `json:"source"`
 	CreatedAt      time.Time      `json:"createdAt"`
 }
+
+// CompanyDetails represents details about a company
+// @Description Company details
 type CompanyDetails struct {
 	PlatformCompanyURL string `json:"platform_company_url"`
-	CompanyURL         string `json:"company_url"`
-	CompanyIndustry    string `json:"company_industry"`
+	CompanyURL         string `json:"url"`
+	CompanyIndustry    string `json:"industry"`
+	Company            string `json:"name"`
 }
 
+// ScraperType represents the type of job scraper
+// @Description Type of job scraper
 type ScraperType string
 
 const (
@@ -30,6 +37,8 @@ const (
 	LinkedIn ScraperType = "linkedin"
 )
 
+// ScrapeConfig represents the configuration for a job scraping operation
+// @Description Configuration for job scraping
 type ScrapeConfig struct {
 	JobTitle string
 	Country  string
